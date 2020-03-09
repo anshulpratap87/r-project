@@ -1,0 +1,47 @@
+library(rpart)
+library(rpart.plot)
+
+heart = read.csv('heart.csv')
+View(heart)
+heart[ , c(2, 3, 6, 7, 9, 11, 12, 14)] <- as.data.frame(sapply(heart[ , c(2, 3, 6, 7, 9, 11, 12, 14)], as.factor))
+
+
+str(heart)
+
+library(caTools)
+
+set.seed(100)
+i = sample.split(heart$heart.disease, SplitRatio = 0.8)
+
+train <- heart[i,]
+val <- heart[!i,]
+tree_model = rpart(heart.disease ~ ., data = train)
+
+prp(tree_model)
+
+pred_hd <- predict(tree_model, newdata = val)
+
+summary(pred_hd)
+View(pred_hd)
+val$pred <- as.factor(ifelse(pred_hd[,2] > 0.35, "Yes", "No"))
+View(val)
+library(caret)
+confusionMatrix(val$pred, val$heart.disease, positive = "Yes")
+
+
+
+### Tuning the tree ############cp = cost of partition if its not more than 050
+
+tree_model = rpart(heart.disease ~ ., data = train,
+                   control = rpart.control(cp = 0.05))
+
+prp(tree_model)
+
+pred_hd <- predict(tree_model, newdata = val)
+
+summary(pred_hd)
+
+pred <- as.factor(ifelse(pred_hd[,2] > 0.25, "Yes", "No"))
+
+library(caret)
+confusionMatrix(pred, val$heart.disease, positive = "Yes")
